@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db_neo4J:
+    image: neo4j:latest
+    restart: unless-stopped
+    ports:
+      - 7474:7474
+      - 7687:7687
+    volumes:
+      - ./conf:/conf
+      - ./data:/data
+      - ./import:/import
+      - ./logs:/logs
+      - ./plugins:/plugins
+    networks:
+      - app_neo4j
+  app:
+    image: python:3.10.4-slim-buster
+    ports:
+      - '9521:9521'
+    networks:
+      - app_neo4j 
+
+networks:
+  app_neo4j:
+  
+volumes:
+  neo4j_data:
