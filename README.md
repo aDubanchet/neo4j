@@ -9,12 +9,15 @@ https://py2neo.org/2021.1/
 
 # Fichiers importants 
 docker-compose.yml : détaille l'architecture du projet (une app python + une db neo4j)
+
 main.py : contient le script neo4j 
 
 # Quickstart
 ## Démarrer hors du Docker
+
 ````
 source env/bin/activate
 pip3 install -r requirements.txt
 python main.py
 ```
+
