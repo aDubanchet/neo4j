@@ -52,7 +52,7 @@ def suggestions_relation_connaissances(utilisateur):
 # Exemples d'utilisation des fonctions
 
 # Création d'une entreprise
-creer_entreprise("Acme Corporation")
+creer_entreprise("Relais de l'abbaye")
 
 # Création d'un utilisateur
 creer_utilisateur("Alexis", "Dbn", "Développeur Python", ["Python", "SQL", "Web"])
