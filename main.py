@@ -19,6 +19,7 @@ def creer_entreprise(nom):
 
     tx = graph.begin()
     tx.create(entreprise)
+    tx.commit()
     return entreprise
 
 def creer_utilisateur(nom, prenom, description, competences):
@@ -26,6 +27,7 @@ def creer_utilisateur(nom, prenom, description, competences):
     
     tx = graph.begin()
     tx.create(utilisateur)
+    tx.commit()
     return utilisateur
 
 # ----------------------------
@@ -37,38 +39,47 @@ def travailler_pour(utilisateur, entreprise, role, periode):
     
     tx = graph.begin()
     tx.create(relation)
+    tx.commit()
 
 # ----------------------------
 # Fonctions de recherche
 # ----------------------------
 
 def rechercher_entreprises_par_nom(nom):
-    query = "MATCH (entreprise:Entreprise) WHERE entreprise.nom CONTAINS $nom RETURN entreprise"
-    result = graph.run(query, nom=nom)
-    return result
+    query = 'MATCH (entreprise:Entreprise) WHERE entreprise.nom CONTAINS "{}" RETURN entreprise'.format(nom)
+    result = graph.run(query)
+    return result.data()  
 
 
 def rechercher_utilisateurs_par_nom(nom):
-    query = "MATCH (utilisateur:Utilisateur) WHERE utilisateur.nom CONTAINS $nom RETURN utilisateur"
+    query = 'MATCH (utilisateur:Utilisateur) WHERE utilisateur.nom CONTAINS "{}" RETURN utilisateur'.format(nom)
     result = graph.run(query, nom=nom)
-    return result
+    return result.data()
 
 # ----------------------------
 # Suggestions
 # ----------------------------
 
-def suggestions_relation_travail(utilisateur, entreprise):
+def suggestions_relation_travail(nom_utilisateur, nom_entreprise):
     # suggestions de relations basée sur le travail en commun dans une entreprise donnée
-    query = "MATCH (utilisateur)-[relation:A_TRAVAILLE_POUR]->(entreprise) WHERE entreprise.nom = $entreprise_nom AND NOT utilisateur = $utilisateur RETURN utilisateur"
-    result = graph.run(query, entreprise_nom=entreprise, utilisateur=utilisateur)
-    return result
+    query = """
+    MATCH (utilisateur:Utilisateur)-[relation:A_TRAVAILLE_POUR]->(entreprise:Entreprise) 
+    WHERE entreprise.nom = $nom_entreprise AND utilisateur.nom <> $nom_utilisateur
+    RETURN utilisateur
+    """
+    result = graph.run(query, nom_entreprise=nom_entreprise, nom_utilisateur=nom_utilisateur)
+    return result.data()
 
-def suggestions_relation_connaissances(utilisateur):
+def suggestions_relation_connaissances(nom_utilisateur):
     # suggestions de relations basée sur les connaissances d'un utilisateur donné
-    query = "MATCH (utilisateur)-[:A_TRAVAILLE_POUR]->(entreprise)<-[:A_TRAVAILLE_POUR]-(autre_utilisateur) WHERE NOT utilisateur = autre_utilisateur AND NOT (utilisateur)-[:CONNNAISSANCE]->(autre_utilisateur) RETURN autre_utilisateur"
-    result = graph.run(query)
-    return result
 
+    query = """
+    MATCH (utilisateur:Utilisateur)-[:A_TRAVAILLE_POUR]->(entreprise)<-[:A_TRAVAILLE_POUR]-(autre_utilisateur) 
+    WHERE utilisateur.nom = $nom_utilisateur AND NOT (utilisateur)-[:CONNNAISSANCE]->(autre_utilisateur) 
+    RETURN autre_utilisateur
+    """
+    result = graph.run(query, nom_utilisateur=nom_utilisateur)
+    return result.data()
 
 
 # Test
@@ -96,5 +107,19 @@ for entreprise in resultat_entreprises:
 # Recherche d'utilisateur
 print("-------------------")
 print("Recherche utilisateurs :")
-resultat_utilisateurs = rechercher_utilisateurs_par_nom("Dbn")
+resultat_utilisateurs = rechercher_utilisateurs_par_nom("Alexis")
 print(resultat_utilisateurs)
+
+# Suggestions de relations de travail
+print("-------------------")
+print("Suggestions de relations de travail :")
+suggestions = suggestions_relation_travail("Alexis", "Relais de l'abbaye")
+for suggestion in suggestions:
+    print(suggestion["utilisateur"]["nom"])
+
+# Suggestions de relations de connaissances
+print("-------------------")
+print("Suggestions de relations de connaissances :")
+suggestions = suggestions_relation_connaissances("Alexis")
+for suggestion in suggestions:
+    print(suggestion["autre_utilisateur"]["nom"])
